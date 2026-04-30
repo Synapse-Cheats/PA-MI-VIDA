@@ -268,7 +268,8 @@
     @keyframes musicFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 
     #continue-btn {
-      position:relative; z-index:10;
+      position:fixed; bottom:2.5rem; left:50%; transform:translateX(-50%) translateY(20px);
+      z-index:55;
       background:linear-gradient(135deg, var(--crimson), var(--deep-rose));
       color:#FDF4F0; border:none;
       padding:.72rem 1.7rem; cursor:pointer;
@@ -276,12 +277,13 @@
       font-size:.6rem; letter-spacing:.28em; text-transform:uppercase;
       border-radius:30px;
       transition:opacity .6s ease, transform .6s ease, box-shadow .3s;
-      opacity:0; transform:translateY(8px);
+      opacity:0;
       touch-action:manipulation;
       box-shadow:0 4px 22px rgba(139,16,48,0.3);
+      white-space:nowrap;
     }
-    #continue-btn.show { opacity:1; transform:none; }
-    #continue-btn:hover { box-shadow:0 6px 30px rgba(139,16,48,0.5); transform:translateY(-2px); }
+    #continue-btn.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    #continue-btn:active { box-shadow:0 6px 30px rgba(139,16,48,0.5); }
 
     /* ════════════════════════════════
        INTERIOR DEL LIBRO
@@ -714,12 +716,14 @@
             en voz alta.
           </p>
           <div class="fp-music-icon">♪</div>
-          <button id="continue-btn">Continúa leyendo &nbsp;↓</button>
+
         </div>
       </div><!-- /face.back -->
 
     </div><!-- /cover-card -->
   </div><!-- /book-scene -->
+  <!-- Botón fuera del card 3D para que funcione en móvil -->
+  <button id="continue-btn">Continúa leyendo &nbsp;↓</button>
 </div><!-- /cover-wrap -->
 
 
@@ -963,6 +967,31 @@
     <p class="page-num">— fin —</p>
   </div>
 
+
+  <!-- QUIERO VERTE MAÑANA -->
+  <div class="page-section reveal" style="text-align:center;">
+    <div class="chapter-opener">
+      <div class="chapter-divider"><span class="chapter-icon" style="font-size:1.4rem;">🌙</span></div>
+    </div>
+
+    <div class="poem reveal">
+      Hay algo que no puede esperar<br>
+      más tiempo dentro de mí.<br><br>
+      <span class="hl">Quiero verte mañana.</span><br><br>
+      No para decir algo perfecto,<br>
+      ni para tener todo resuelto.<br>
+      Solo para estar cerca de ti,<br>
+      que es el único lugar<br>
+      donde todo tiene sentido.
+    </div>
+
+    <div class="pull-quote reveal" style="margin-top:2.5rem;">
+      Mañana. Por favor. <span class="hl">¿Sí?</span>
+    </div>
+
+    <p class="page-num" style="margin-top:2rem;">— para siempre —</p>
+  </div>
+
 </main><!-- /book-main -->
 
 
@@ -1174,8 +1203,6 @@ function openBook(){
   if(bookOpened) return;
   bookOpened = true;
   coverCard.classList.add('flip');
-  /* Reproducir INMEDIATAMENTE para mantener el contexto del gesto del usuario.
-     currentTime=10 salta el silencio inicial de la canción. */
   music.currentTime = 10;
   music.volume = 0;
   music.play().then(()=>fadeInAudio()).catch(()=>{});
@@ -1227,32 +1254,21 @@ progressTrack.addEventListener('click',e=>{
 
 /* ── REVEAL EN SCROLL ── */
 function initReveal(){
-  const obs=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(!e.isIntersecting) return;
-      e.target.classList.add('visible');
-      e.target.querySelectorAll('.card').forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*90));
-      obs.unobserve(e.target);
-    });
-  },{ threshold:.06, rootMargin:'0px 0px -40px 0px' });
-
-  document.querySelectorAll('.reveal').forEach(el=>{ if(!el.classList.contains('card')) obs.observe(el); });
-
-  const cardObs=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{ if(!e.isIntersecting) return; e.target.classList.add('visible'); cardObs.unobserve(e.target); });
-  },{ threshold:.05, rootMargin:'0px 0px -20px 0px' });
-  document.querySelectorAll('.card.reveal').forEach(el=>cardObs.observe(el));
-
-  /* Forzar visibilidad en elementos que ya están en el viewport al iniciarse */
-  setTimeout(()=>{
-    document.querySelectorAll('.reveal:not(.visible)').forEach(el=>{
-      const r=el.getBoundingClientRect();
-      if(r.top < window.innerHeight * 0.98){
+  function checkVisible(){
+    document.querySelectorAll('.reveal:not(.visible)').forEach(function(el){
+      var r = el.getBoundingClientRect();
+      if(r.top < window.innerHeight + 10){
         el.classList.add('visible');
-        el.querySelectorAll('.card').forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*90));
+        el.querySelectorAll('.card').forEach(function(c,i){
+          setTimeout(function(){ c.classList.add('visible'); }, i * 100);
+        });
       }
     });
-  }, 120);
+  }
+  window.addEventListener('scroll', checkVisible, { passive: true });
+  checkVisible();
+  setTimeout(checkVisible, 80);
+  setTimeout(checkVisible, 300);
 }
 </script>
 </body>
