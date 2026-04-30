@@ -1174,11 +1174,12 @@ function openBook(){
   if(bookOpened) return;
   bookOpened = true;
   coverCard.classList.add('flip');
-  setTimeout(()=>{
-    music.volume = 0;
-    music.play().then(()=>fadeInAudio()).catch(()=>{});
-    player.classList.add('show');
-  }, 1200);
+  /* Reproducir INMEDIATAMENTE para mantener el contexto del gesto del usuario.
+     currentTime=10 salta el silencio inicial de la canción. */
+  music.currentTime = 10;
+  music.volume = 0;
+  music.play().then(()=>fadeInAudio()).catch(()=>{});
+  setTimeout(()=>{ player.classList.add('show'); }, 1200);
   setTimeout(()=>continueBtn.classList.add('show'), 2100);
 }
 
@@ -1241,6 +1242,17 @@ function initReveal(){
     entries.forEach(e=>{ if(!e.isIntersecting) return; e.target.classList.add('visible'); cardObs.unobserve(e.target); });
   },{ threshold:.05, rootMargin:'0px 0px -20px 0px' });
   document.querySelectorAll('.card.reveal').forEach(el=>cardObs.observe(el));
+
+  /* Forzar visibilidad en elementos que ya están en el viewport al iniciarse */
+  setTimeout(()=>{
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el=>{
+      const r=el.getBoundingClientRect();
+      if(r.top < window.innerHeight * 0.98){
+        el.classList.add('visible');
+        el.querySelectorAll('.card').forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*90));
+      }
+    });
+  }, 120);
 }
 </script>
 </body>
