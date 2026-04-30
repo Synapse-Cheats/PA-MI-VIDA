@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Para Ti</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=Raleway:wght@200;300;400&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --gold:        #D4AF6A;
+      --rose-gold:   #C8906A;
+      --crimson:     #8B1030;
+      --deep-rose:   #B03060;
+      --blush:       #E8A5B8;
+      --soft-blush:  #FDE8EE;
+      --cream:       #FDF4F0;
+      --mauve:       #7C4870;
+      --soft-mauve:  #A880A0;
+      --ink:         #2C1018;
+      --ink2:        #4A2030;
+      --midnight:    #0D0120;
+      --velvet:      #1E0830;
+      --dark:        #07000F;
+    }
+
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+    body {
+      background: var(--dark);
+      font-family: 'Cormorant Garamond', serif;
+      overflow-x: hidden;
+      transition: background 1.5s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body.opened { background: var(--cream); }
+
+    /* ── CANVASES ── */
+    #petals-canvas, #firefly-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 1;
+    }
+    #firefly-canvas { display: none; }
+    body.opened #firefly-canvas { display: block; }
+
+    /* ════════════════════════════════
+       COVER WRAP — TERCIOPELO NOCTURNO
+    ════════════════════════════════ */
+    #cover-wrap {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse 100% 80% at 50% 40%,
+        rgba(90,10,65,0.65) 0%, rgba(22,5,45,0.97) 55%, rgba(5,0,12,1) 100%);
+      transition: opacity 1.2s ease;
+    }
+    #cover-wrap.dissolve { opacity: 0; pointer-events: none; }
+
+    /* Estrellas en el fondo */
+    #stars-bg {
+      position: absolute; inset: 0;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Luna detrás del libro */
+    #cover-wrap::after {
+      content: '';
+      position: absolute;
+      width: 380px; height: 380px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,70,140,0.12) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -58%);
+      animation: moonGlow 7s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+    @keyframes moonGlow {
+      0% { transform:translate(-50%,-58%) scale(1); opacity:.5; }
+      100%{ transform:translate(-50%,-58%) scale(1.25); opacity:1; }
+    }
+
+    /* 3D scene */
+    #book-scene {
+      perspective: 2200px;
+      perspective-origin: 50% 45%;
+      position: relative; z-index: 2;
+    }
+
+    #cover-card {
+      position: relative;
+      width: min(320px, 88vw);
+      height: min(460px, 78vh);
+      transform-style: preserve-3d;
+      transform-origin: left center;
+      transition: transform 1.9s cubic-bezier(0.77, 0, 0.175, 1);
+      cursor: pointer;
+      transform: rotateY(-8deg) rotateX(2deg);
+    }
+    #cover-card.flip { transform: rotateY(-188deg); cursor: default; }
+
+    @media (max-width: 540px) {
+      #book-scene { perspective: 1200px; }
+      #cover-card { transform-origin: center center; transform: rotateY(-4deg) rotateX(1deg); }
+      #cover-card.flip { transform: rotateY(-180deg); }
+    }
+
+    .face {
+      position: absolute; inset: 0;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      border-radius: 2px 8px 8px 2px;
+    }
+
+    /* ── PORTADA FRONTAL ── */
+    .face.front {
+      background: linear-gradient(155deg, #1c0332 0%, #300550 35%, #1c0332 65%, #0C0118 100%);
+      border: 1px solid rgba(212,175,106,0.35);
+      box-shadow:
+        10px 10px 50px rgba(0,0,0,0.95),
+        0 0 90px rgba(140,20,100,0.25),
+        inset 0 0 100px rgba(0,0,0,0.55),
+        inset 1px 0 0 rgba(255,255,255,0.025);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    /* Lomo */
+    .face.front::before {
+      content: '';
+      position: absolute; top:0; left:0; bottom:0; width:18px;
+      background: linear-gradient(90deg, #080012, #200440, #100025);
+      border-right: 1px solid rgba(212,175,106,0.18);
+    }
+
+    /* Ornamentos esquina */
+    .cover-corner {
+      position: absolute; width:42px; height:42px; opacity:.5;
+    }
+    .cover-corner svg { width:100%; height:100%; }
+    .cover-corner.tl { top:10px; left:22px; }
+    .cover-corner.tr { top:10px; right:9px; transform:scaleX(-1); }
+    .cover-corner.bl { bottom:10px; left:22px; transform:scaleY(-1); }
+    .cover-corner.br { bottom:10px; right:9px; transform:scale(-1,-1); }
+
+    /* Líneas horizontales decorativas */
+    .cover-hline {
+      position:absolute; left:24px; right:10px; height:1px;
+      background: linear-gradient(90deg, transparent, rgba(212,175,106,0.45), transparent);
+    }
+    .cover-hline.top { top:55px; }
+    .cover-hline.bot { bottom:55px; }
+
+    .cover-inner {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:space-between;
+      padding:2.2rem 1.8rem 1.4rem 2.5rem;
+      position:relative; z-index:1;
+    }
+
+    .cover-tag {
+      font-family:'Raleway',sans-serif; font-weight:200;
+      font-size:.5rem; letter-spacing:.52em; color:rgba(212,175,106,0.55);
+      text-transform:uppercase; margin-top:.5rem;
+    }
+
+    .cover-title {
+      font-family:'Playfair Display',serif;
+      font-size:clamp(2.8rem,10vw,3.9rem);
+      font-weight:700; color:var(--gold);
+      text-shadow:0 0 40px rgba(212,175,106,0.55),0 0 80px rgba(180,60,140,0.3);
+      line-height:1; text-align:center;
+    }
+    .cover-title em {
+      display:block; font-style:italic; font-weight:400;
+      font-size:clamp(1.8rem,6vw,2.4rem); color:#f2dc9a;
+    }
+
+    /* Texto script cursiva */
+    .cover-script {
+      font-family:'Great Vibes',cursive;
+      font-size:clamp(1.3rem,5vw,1.9rem);
+      color:rgba(232,165,184,0.75);
+      text-shadow:0 0 20px rgba(180,60,140,0.4);
+      margin-top:.3rem;
+    }
+
+    .cover-ornament {
+      font-size:.85rem; color:rgba(212,175,106,0.4);
+      letter-spacing:.6em;
+    }
+
+    .cover-rose {
+      font-size:1.9rem;
+      filter:drop-shadow(0 0 16px rgba(200,60,140,0.8));
+      animation:roseFloat 3.2s ease-in-out infinite;
+    }
+    @keyframes roseFloat {
+      0%,100%{transform:translateY(0) scale(1)}
+      50%{transform:translateY(-7px) scale(1.06)}
+    }
+
+    .cover-author {
+      font-family:'Cormorant Garamond',serif; font-style:italic;
+      font-size:.78rem; color:rgba(212,175,106,0.5);
+      text-align:center; line-height:1.65;
+    }
+
+    .cover-hint {
+      font-family:'Raleway',sans-serif; font-weight:200;
+      font-size:.5rem; letter-spacing:.38em; text-transform:uppercase;
+      color:rgba(232,165,184,0.45); text-align:center; margin-top:.4rem;
+      animation:hintPulse 2.6s ease-in-out infinite;
+    }
+    @keyframes hintPulse { 0%,100%{opacity:.3} 50%{opacity:.9} }
+
+    /* ── CARA TRASERA (primera página) ── */
+    .face.back {
+      transform:rotateY(180deg);
+      background:linear-gradient(150deg, #FDF0F3 0%, #FDE8EE 55%, #FEF2F0 100%);
+      border:1px solid rgba(212,175,106,0.22);
+      box-shadow:-10px 8px 45px rgba(0,0,0,0.5);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden;
+    }
+    /* Lavado acuarela */
+    .face.back::before {
+      content:'';
+      position:absolute; inset:0;
+      background:radial-gradient(ellipse 80% 55% at 50% 30%, rgba(232,165,184,0.22) 0%, transparent 70%);
+    }
+
+    @media (max-width:540px){
+      .face.back { box-shadow:0 6px 30px rgba(0,0,0,0.4); }
+    }
+
+    .first-page {
+      padding:2.2rem 1.8rem; text-align:center;
+      display:flex; flex-direction:column; align-items:center; gap:.8rem;
+      position:relative; z-index:1;
+    }
+
+    .fp-ornament { color:var(--gold); font-size:.9rem; letter-spacing:.4em; }
+
+    .fp-note {
+      font-family:'Raleway',sans-serif; font-weight:300;
+      font-size:.55rem; letter-spacing:.38em; text-transform:uppercase;
+      color:var(--mauve);
+    }
+
+    .fp-title {
+      font-family:'Playfair Display',serif; font-size:1.4rem;
+      color:var(--crimson); line-height:1.35;
+    }
+    .fp-title em { font-style:italic; font-weight:400; color:var(--deep-rose); }
+
+    .fp-script {
+      font-family:'Great Vibes',cursive;
+      font-size:1.55rem; color:var(--deep-rose); opacity:.65;
+    }
+
+    .fp-text {
+      font-size:.8rem; line-height:1.95; color:var(--ink2);
+      font-style:italic; font-weight:300;
+    }
+
+    .fp-music-icon {
+      font-size:1.8rem; color:var(--mauve);
+      animation:musicFloat 2.5s ease-in-out infinite;
+    }
+    @keyframes musicFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+    #continue-btn {
+      position:relative; z-index:10;
+      background:linear-gradient(135deg, var(--crimson), var(--deep-rose));
+      color:#FDF4F0; border:none;
+      padding:.72rem 1.7rem; cursor:pointer;
+      font-family:'Raleway',sans-serif; font-weight:300;
+      font-size:.6rem; letter-spacing:.28em; text-transform:uppercase;
+      border-radius:30px;
+      transition:opacity .6s ease, transform .6s ease, box-shadow .3s;
+      opacity:0; transform:translateY(8px);
+      touch-action:manipulation;
+      box-shadow:0 4px 22px rgba(139,16,48,0.3);
+    }
+    #continue-btn.show { opacity:1; transform:none; }
+    #continue-btn:hover { box-shadow:0 6px 30px rgba(139,16,48,0.5); transform:translateY(-2px); }
+
+    /* ════════════════════════════════
+       INTERIOR DEL LIBRO
+    ════════════════════════════════ */
+    #book-main {
+      position:relative; z-index:2; display:none;
+      background:linear-gradient(180deg, #FAE8EE 0%, #FDF4F0 12%, #FDF4F0 88%, #FAE8EE 100%);
+      min-height:100vh; padding-bottom:105px;
+    }
+
+    /* Textura papel rayado suave */
+    #book-main::before {
+      content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+      background-image:repeating-linear-gradient(
+        0deg,
+        rgba(180,80,120,0.022) 0px, rgba(180,80,120,0.022) 1px,
+        transparent 1px, transparent 28px
+      );
+    }
+
+    /* Secciones */
+    .page-section {
+      position:relative; z-index:1;
+      max-width:680px; margin:0 auto;
+      padding:clamp(2rem,6vw,6rem) clamp(1.2rem,5vw,4rem);
+      border-bottom:1px solid rgba(180,80,120,0.09);
+    }
+    .page-section:last-of-type { border-bottom:none; }
+
+    /* Lavado alterno */
+    .page-section:nth-child(even)::before {
+      content:''; position:absolute; inset:0; z-index:-1;
+      background:radial-gradient(ellipse 65% 50% at 50% 50%, rgba(232,165,184,0.07) 0%, transparent 70%);
+    }
+
+    /* Apertura de capítulo */
+    .chapter-opener { text-align:center; margin-bottom:3rem; }
+
+    .chapter-num {
+      font-family:'Raleway',sans-serif; font-weight:200;
+      font-size:.53rem; letter-spacing:.58em; text-transform:uppercase;
+      color:rgba(139,16,48,0.5); display:block; margin-bottom:1rem;
+    }
+    .chapter-num.t { color:var(--mauve); }
+
+    .chapter-divider {
+      display:flex; align-items:center; gap:.8rem;
+      margin:1rem auto; max-width:280px;
+    }
+    .chapter-divider::before, .chapter-divider::after {
+      content:''; flex:1; height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,175,106,0.5));
+    }
+    .chapter-divider::after {
+      background:linear-gradient(90deg, rgba(212,175,106,0.5), transparent);
+    }
+    .chapter-divider.t::before { background:linear-gradient(90deg, transparent, rgba(124,72,112,0.4)); }
+    .chapter-divider.t::after  { background:linear-gradient(90deg, rgba(124,72,112,0.4), transparent); }
+
+    .chapter-icon { color:var(--crimson); font-size:1rem; }
+    .chapter-icon.t { color:var(--mauve); }
+
+    .chapter-title {
+      font-family:'Playfair Display',serif;
+      font-size:clamp(1.8rem,5vw,2.8rem);
+      color:var(--crimson); line-height:1.25;
+    }
+    .chapter-title em { font-style:italic; color:var(--deep-rose); }
+    .chapter-title .tl { font-style:italic; color:var(--mauve); }
+
+    /* Subtítulo script bajo el título de capítulo */
+    .chapter-script {
+      font-family:'Great Vibes',cursive;
+      font-size:clamp(1.1rem,3vw,1.7rem);
+      color:rgba(176,48,96,0.38);
+      display:block; margin-top:.45rem;
+    }
+
+    /* Drop cap */
+    .drop-cap::first-letter {
+      float:left; font-family:'Playfair Display',serif;
+      font-size:4.5rem; line-height:.75;
+      padding-right:.12em; padding-top:.08em;
+      color:var(--crimson);
+    }
+
+    /* Cuerpo de texto */
+    .body-text {
+      font-size:clamp(1rem,2vw,1.15rem);
+      line-height:2.1; color:var(--ink); font-weight:300;
+    }
+    .body-text p { margin-bottom:1.8rem; }
+    .body-text p:last-child { margin-bottom:0; }
+
+    .hl  { color:var(--crimson); font-style:italic; }
+    .hlt { color:var(--mauve);   font-style:italic; }
+
+    /* Cita destacada — estilo romántico */
+    .pull-quote {
+      font-family:'Playfair Display',serif; font-style:italic;
+      font-size:clamp(1.1rem,2.8vw,1.6rem);
+      color:var(--crimson); line-height:1.8;
+      padding:1.6rem 2rem 1.6rem 2.5rem;
+      margin:2.5rem 0;
+      background:linear-gradient(135deg, rgba(253,232,238,0.85), rgba(253,244,240,0.65));
+      border-radius:0 20px 0 20px;
+      box-shadow:inset 0 0 0 1px rgba(212,175,106,0.22), 5px 5px 25px rgba(180,80,120,0.07);
+      position:relative;
+    }
+    .pull-quote::before {
+      content:'\275D';
+      font-family:'Playfair Display',serif;
+      font-size:3.5rem; line-height:1; color:rgba(212,175,106,0.38);
+      position:absolute; top:-.2rem; left:.7rem;
+    }
+    .pull-quote.tq {
+      color:var(--mauve);
+      background:linear-gradient(135deg, rgba(248,240,252,0.85), rgba(253,244,250,0.65));
+      box-shadow:inset 0 0 0 1px rgba(124,72,112,0.18), 5px 5px 25px rgba(124,72,112,0.07);
+    }
+    .pull-quote.tq::before { color:rgba(124,72,112,0.32); }
+
+    /* Grid de tarjetas */
+    .cards-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(min(240px,100%),1fr));
+      gap:1.2rem; margin-top:2rem;
+    }
+
+    .card {
+      border:1px solid rgba(212,175,106,0.18);
+      background:linear-gradient(135deg, rgba(253,232,238,0.52), rgba(255,255,255,0.42));
+      padding:1.8rem 1.5rem; position:relative;
+      transition:transform .35s, box-shadow .35s;
+      border-radius:14px; overflow:hidden;
+    }
+    .card:hover { transform:translateY(-5px); box-shadow:0 12px 35px rgba(139,16,48,0.11); }
+
+    /* Bloom en hover */
+    .card::before {
+      content:''; position:absolute;
+      bottom:-35px; right:-35px;
+      width:90px; height:90px; border-radius:50%;
+      background:radial-gradient(circle, rgba(232,165,184,0.35) 0%, transparent 70%);
+      transition:transform .55s, opacity .55s; opacity:0;
+    }
+    .card:hover::before { transform:scale(2.8); opacity:1; }
+
+    /* Borde izquierdo animado */
+    .card::after {
+      content:''; position:absolute; left:0; top:0;
+      width:3px; height:0;
+      background:linear-gradient(180deg, var(--gold), var(--deep-rose), var(--crimson));
+      border-radius:0 0 3px 3px; transition:height .4s;
+    }
+    .card:hover::after { height:100%; }
+
+    .card.tc {
+      border-color:rgba(124,72,112,0.18);
+      background:linear-gradient(135deg, rgba(248,240,252,0.52), rgba(255,255,255,0.42));
+    }
+    .card.tc::after { background:linear-gradient(180deg, var(--soft-mauve), var(--mauve)); }
+    .card.tc:hover { box-shadow:0 12px 35px rgba(124,72,112,0.1); }
+
+    .card-num { font-family:'Playfair Display',serif; font-size:2.8rem; line-height:1; color:rgba(139,16,48,0.07); margin-bottom:.5rem; }
+    .card.tc .card-num { color:rgba(124,72,112,0.08); }
+    .card-title { font-family:'Playfair Display',serif; font-style:italic; font-size:1.1rem; color:var(--crimson); margin-bottom:.6rem; }
+    .card.tc .card-title { color:var(--mauve); }
+    .card-text { font-size:.88rem; line-height:1.92; color:var(--ink2); }
+
+    /* Poema */
+    .poem {
+      text-align:center; max-width:460px; margin:2rem auto;
+      font-family:'Playfair Display',serif; font-style:italic;
+      font-size:clamp(1.1rem,2.5vw,1.5rem);
+      line-height:2; color:var(--ink);
+      position:relative; padding:1.5rem 0;
+    }
+    .poem::before, .poem::after {
+      content:'· · ·'; display:block; text-align:center;
+      font-family:'Raleway',sans-serif; font-weight:200;
+      font-size:.58rem; letter-spacing:.55em;
+      color:rgba(212,175,106,0.48); margin-bottom:1rem;
+    }
+    .poem::after { margin-top:1rem; margin-bottom:0; }
+    .poem .hl { color:var(--crimson); }
+    .poem .hlt { color:var(--mauve); }
+
+    /* Corazón */
+    .heart-section {
+      text-align:center; padding:3rem 0;
+      display:flex; flex-direction:column; align-items:center; gap:1.2rem;
+    }
+    .heart-wrap { position:relative; width:92px; height:92px; }
+    .heart-svg { width:100%; height:100%; animation:hb 1.4s ease-in-out infinite; }
+    @keyframes hb {
+      0%,100%{transform:scale(1)} 14%{transform:scale(1.2)}
+      28%{transform:scale(1)} 42%{transform:scale(1.14)} 70%{transform:scale(1)}
+    }
+    .hring {
+      position:absolute; inset:0; border-radius:50%;
+      border:1px solid rgba(176,48,96,0.22);
+      animation:rp 1.4s ease-out infinite;
+    }
+    .hring:nth-child(2){animation-delay:.35s} .hring:nth-child(3){animation-delay:.7s}
+    @keyframes rp { 0%{transform:scale(.7);opacity:1} 100%{transform:scale(2.7);opacity:0} }
+
+    .heart-phrase {
+      font-family:'Playfair Display',serif; font-style:italic;
+      font-size:clamp(1rem,2.5vw,1.5rem); color:var(--crimson);
+      max-width:380px; line-height:1.78;
+    }
+
+    /* Firma */
+    .signature-block { text-align:center; padding:3rem 0 1rem; }
+    .sig-firma {
+      font-family:'Great Vibes',cursive;
+      font-size:clamp(2.8rem,8vw,4.2rem);
+      color:var(--crimson);
+      text-shadow:0 2px 18px rgba(139,16,48,0.18);
+    }
+    .sig-sub {
+      font-family:'Raleway',sans-serif; font-weight:200;
+      font-size:.62rem; letter-spacing:.38em; text-transform:uppercase;
+      color:rgba(139,16,48,0.3); margin-top:.5rem;
+    }
+    .stars { color:var(--gold); letter-spacing:.5em; font-size:1rem; opacity:.5; margin:1rem 0; }
+
+    .page-num {
+      text-align:right; font-family:'Raleway',sans-serif; font-size:.52rem;
+      letter-spacing:.25em; color:rgba(139,16,48,0.22); margin-top:2rem;
+    }
+
+    /* Reveal en scroll */
+    .reveal { opacity:0; transform:translateY(28px); transition:opacity .9s ease, transform .9s ease; }
+    .reveal.visible { opacity:1; transform:none; }
+
+    /* ════════════════════════════════
+       REPRODUCTOR DE MÚSICA
+    ════════════════════════════════ */
+    #music-player {
+      position:fixed; bottom:0; left:0; right:0; z-index:60;
+      background:rgba(8,2,16,0.96);
+      backdrop-filter:blur(28px);
+      border-top:1px solid rgba(212,175,106,0.18);
+      display:flex; align-items:center; gap:.8rem;
+      padding:.6rem 1rem;
+      transform:translateY(100%);
+      transition:transform .7s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    #music-player.show { transform:none; }
+
+    .player-disc {
+      width:38px; height:38px; border-radius:50%;
+      background:radial-gradient(circle at 38% 38%,
+        #1a052a 25%, #3a0860 26%, #1a052a 50%, #3a0860 51%, #1a052a 65%);
+      border:1px solid rgba(212,175,106,0.22);
+      display:flex; align-items:center; justify-content:center;
+      font-size:.8rem; color:var(--gold); flex-shrink:0;
+    }
+    #music-player.playing .player-disc { animation:spin 4s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .player-info { flex-shrink:0; }
+    .player-title {
+      font-family:'Great Vibes',cursive;
+      font-size:1.15rem; color:#FDE8EE; display:block; line-height:1.2;
+    }
+    .player-sub {
+      font-family:'Raleway',sans-serif; font-weight:200;
+      font-size:.46rem; letter-spacing:.22em; text-transform:uppercase;
+      color:rgba(212,175,106,0.42); display:block;
+    }
+
+    .player-controls { display:flex; align-items:center; flex-shrink:0; }
+
+    #play-btn {
+      width:36px; height:36px; border-radius:50%;
+      background:linear-gradient(135deg, var(--crimson), var(--deep-rose));
+      border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:transform .2s, box-shadow .2s; padding:0;
+      box-shadow:0 2px 14px rgba(139,16,48,0.4);
+    }
+    #play-btn:hover { transform:scale(1.12); box-shadow:0 4px 22px rgba(139,16,48,0.6); }
+    #play-btn svg { width:15px; height:15px; fill:#FDE8EE; }
+
+    .player-progress { flex:1; display:flex; align-items:center; gap:.5rem; min-width:0; }
+    .progress-track {
+      flex:1; height:3px; background:rgba(255,255,255,0.1);
+      border-radius:2px; cursor:pointer; position:relative;
+    }
+    #progress-fill {
+      height:100%;
+      background:linear-gradient(90deg, var(--crimson), var(--gold));
+      border-radius:2px; width:0%; transition:width .3s linear;
+    }
+    #time-disp {
+      font-family:'Raleway',sans-serif; font-size:.48rem;
+      color:rgba(212,175,106,0.45); white-space:nowrap; flex-shrink:0;
+    }
+
+    .wave-bars { display:flex; align-items:flex-end; gap:2px; height:18px; flex-shrink:0; }
+    .wave-bars span {
+      display:block; width:3px; border-radius:2px;
+      background:linear-gradient(180deg, var(--gold), var(--deep-rose));
+      height:6px; opacity:.35;
+    }
+    #music-player.playing .wave-bars span { animation:wb .65s ease-in-out infinite alternate; opacity:.8; }
+    #music-player.playing .wave-bars span:nth-child(1){animation-delay:0s}
+    #music-player.playing .wave-bars span:nth-child(2){animation-delay:.12s}
+    #music-player.playing .wave-bars span:nth-child(3){animation-delay:.24s}
+    #music-player.playing .wave-bars span:nth-child(4){animation-delay:.06s}
+    #music-player.playing .wave-bars span:nth-child(5){animation-delay:.18s}
+    @keyframes wb { from{transform:scaleY(.25)} to{transform:scaleY(1)} }
+    #music-player:not(.playing) .wave-bars span { animation-play-state:paused; }
+
+    /* ── Responsive ── */
+    @media (max-width:480px){
+      .cover-inner { padding:1.6rem 1.4rem 1.2rem 2rem; }
+      .face.back .first-page { padding:1.6rem 1.3rem; gap:.7rem; }
+      .fp-title { font-size:1.25rem; }
+      .fp-text  { font-size:.76rem; }
+      .chapter-title { font-size:clamp(1.5rem,6vw,2rem); }
+      .body-text { font-size:clamp(.95rem,4vw,1.1rem); line-height:1.9; }
+      .pull-quote { font-size:clamp(1rem,4vw,1.3rem); padding:.9rem 1rem .9rem 1.5rem; margin:1.8rem 0; }
+      .card { padding:1.3rem 1.1rem; border-radius:10px; }
+      .card-num { font-size:2rem; } .card-text { font-size:.82rem; }
+      .poem { font-size:clamp(1rem,4.5vw,1.3rem); }
+      .heart-phrase { font-size:clamp(.95rem,4vw,1.2rem); }
+      .sig-firma { font-size:clamp(2.2rem,8vw,3rem); }
+      .player-disc { width:30px; height:30px; font-size:.65rem; }
+      .player-title { font-size:.95rem; } .player-sub { font-size:.44rem; }
+      #play-btn { width:28px; height:28px; } #play-btn svg { width:11px; height:11px; }
+      .wave-bars { display:none; }
+      #book-main { padding-bottom:82px; }
+      .drop-cap::first-letter { font-size:3.5rem; }
+    }
+    @media (max-width:360px){
+      .player-info { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="petals-canvas"></canvas>
+<canvas id="firefly-canvas"></canvas>
+
+<audio id="bg-music" loop preload="auto">
+  <source src="musica.mp3" type="audio/mpeg"/>
+</audio>
+
+<!-- ════ PORTADA ════ -->
+<div id="cover-wrap">
+  <!-- Canvas de estrellas -->
+  <canvas id="stars-bg"></canvas>
+
+  <div id="book-scene">
+    <div id="cover-card">
+
+      <!-- CARA FRONTAL -->
+      <div class="face front">
+        <!-- Ornamentos esquina -->
+        <div class="cover-corner tl">
+          <svg viewBox="0 0 42 42" fill="none">
+            <path d="M3 39 C3 21 21 3 39 3" stroke="rgba(212,175,106,0.65)" stroke-width="1"/>
+            <path d="M3 30 C3 18 13 8 25 3" stroke="rgba(212,175,106,0.38)" stroke-width=".7"/>
+            <circle cx="4.5" cy="37" r="2" fill="rgba(212,175,106,0.55)"/>
+            <circle cx="37" cy="4.5" r="2" fill="rgba(212,175,106,0.55)"/>
+            <path d="M9 28 Q16 21 24 17" stroke="rgba(232,165,184,0.38)" stroke-width=".7"/>
+          </svg>
+        </div>
+        <div class="cover-corner tr">
+          <svg viewBox="0 0 42 42" fill="none">
+            <path d="M3 39 C3 21 21 3 39 3" stroke="rgba(212,175,106,0.65)" stroke-width="1"/>
+            <path d="M3 30 C3 18 13 8 25 3" stroke="rgba(212,175,106,0.38)" stroke-width=".7"/>
+            <circle cx="4.5" cy="37" r="2" fill="rgba(212,175,106,0.55)"/>
+            <circle cx="37" cy="4.5" r="2" fill="rgba(212,175,106,0.55)"/>
+          </svg>
+        </div>
+        <div class="cover-corner bl">
+          <svg viewBox="0 0 42 42" fill="none">
+            <path d="M3 39 C3 21 21 3 39 3" stroke="rgba(212,175,106,0.65)" stroke-width="1"/>
+            <circle cx="4.5" cy="37" r="2" fill="rgba(212,175,106,0.55)"/>
+            <circle cx="37" cy="4.5" r="2" fill="rgba(212,175,106,0.55)"/>
+          </svg>
+        </div>
+        <div class="cover-corner br">
+          <svg viewBox="0 0 42 42" fill="none">
+            <path d="M3 39 C3 21 21 3 39 3" stroke="rgba(212,175,106,0.65)" stroke-width="1"/>
+            <circle cx="4.5" cy="37" r="2" fill="rgba(212,175,106,0.55)"/>
+            <circle cx="37" cy="4.5" r="2" fill="rgba(212,175,106,0.55)"/>
+          </svg>
+        </div>
+
+        <div class="cover-hline top"></div>
+        <div class="cover-hline bot"></div>
+
+        <div class="cover-inner">
+          <p class="cover-tag">Una carta de amor</p>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:.65rem;flex:1;justify-content:center;">
+            <div class="cover-rose">🌹</div>
+            <div class="cover-ornament">✦ &nbsp; ✦ &nbsp; ✦</div>
+            <h1 class="cover-title">Para<em>Ti</em></h1>
+            <p class="cover-script">con todo mi amor</p>
+            <div class="cover-ornament" style="font-size:.7rem;">· · · · ·</div>
+            <p class="cover-author">
+              Escrito desde<br>
+              el lugar más profundo<br>
+              del corazón
+            </p>
+          </div>
+          <p class="cover-hint">toca para abrir &nbsp;✦</p>
+        </div>
+      </div><!-- /face.front -->
+
+      <!-- CARA TRASERA (primera página) -->
+      <div class="face back">
+        <div class="first-page">
+          <div class="fp-ornament">· ✦ ·</div>
+          <p class="fp-note">Antes de comenzar…</p>
+          <h2 class="fp-title">Sé cuánto<br><em>amas la música</em></h2>
+          <p class="fp-script">escucha con el corazón</p>
+          <p class="fp-text">
+            Por eso escogí una canción especialmente
+            para acompañar cada palabra de lo que
+            estás a punto de leer.
+            <br><br>
+            Cuando la escuches, espero que sientas
+            todo lo que yo nunca supe decirte
+            en voz alta.
+          </p>
+          <div class="fp-music-icon">♪</div>
+          <button id="continue-btn">Continúa leyendo &nbsp;↓</button>
+        </div>
+      </div><!-- /face.back -->
+
+    </div><!-- /cover-card -->
+  </div><!-- /book-scene -->
+</div><!-- /cover-wrap -->
+
+
+<!-- ════ LIBRO INTERIOR ════ -->
+<main id="book-main">
+
+  <!-- PRÓLOGO -->
+  <div class="page-section reveal">
+    <div class="chapter-opener">
+      <span class="chapter-num">Prólogo</span>
+      <div class="chapter-divider"><span class="chapter-icon">✦</span></div>
+      <h2 class="chapter-title">Porque <em>tú mereces</em><br>saberlo todo</h2>
+      <span class="chapter-script">todo lo que soy</span>
+    </div>
+    <div class="body-text">
+      <p class="drop-cap">
+        Hay personas que llegan a tu vida y la ordenan sin que lo pidas.
+        Que con solo estar cerca hacen que todo tenga más sentido.
+        <span class="hl">Tú eres esa persona para mí.</span>
+      </p>
+      <p>
+        No soy perfecto. Cometo errores. A veces digo lo que no debo,
+        o no digo lo que debería. Pero cada vez que fallo,
+        lo que más me duele no es el error en sí…
+        <span class="hl">es saber que pudo haberte lastimado a ti.</span>
+      </p>
+      <p>
+        Y aunque las palabras no alcanzan del todo,
+        hoy necesito que sepas que todo lo que soy,
+        lo que pienso, lo que sueño… lleva tu nombre.
+      </p>
+      <p>
+        Sé que hay días en que el mundo se siente pesado, gris, lejano.
+        Días en que incluso levantarse cuesta más de lo que nadie imagina.
+        <span class="hlt">Esos días no te hacen menos. Te hacen humana.
+        Y más valiente de lo que tú misma crees.</span>
+      </p>
+    </div>
+    <p class="page-num">— 1 —</p>
+  </div>
+
+  <!-- CAPÍTULO I -->
+  <div class="page-section reveal">
+    <div class="chapter-opener">
+      <span class="chapter-num">Capítulo I</span>
+      <div class="chapter-divider"><span class="chapter-icon">♡</span></div>
+      <h2 class="chapter-title">Por qué <em>te amo</em><br>sin condiciones</h2>
+      <span class="chapter-script">razones infinitas</span>
+    </div>
+    <div class="cards-grid">
+      <div class="card reveal">
+        <div class="card-num">01</div>
+        <div class="card-title">Tu forma de reír</div>
+        <p class="card-text">Cuando te ríes de verdad, el mundo entero parece detenerse.
+          Es la mejor canción que conozco y nunca me canso de escucharla.</p>
+      </div>
+      <div class="card tc reveal">
+        <div class="card-num">02</div>
+        <div class="card-title">Que sigues aquí</div>
+        <p class="card-text">Cada mañana que abres los ojos es una victoria que pocos entienden.
+          Yo sí lo entiendo. Y me parece uno de los actos más valientes del mundo.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-num">03</div>
+        <div class="card-title">Tu fuerza silenciosa</div>
+        <p class="card-text">Cargas todo con una elegancia que pocos ven.
+          Pero yo sí te veo. Y me asombras cada día más.</p>
+      </div>
+      <div class="card tc reveal">
+        <div class="card-num">04</div>
+        <div class="card-title">No eres una carga</div>
+        <p class="card-text">Lo que sientes no te hace pesada. Tienes derecho de ocupar espacio,
+          de necesitar, de no estar bien. Estar contigo es exactamente donde quiero estar.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-num">05</div>
+        <div class="card-title">Cómo me haces mejor</div>
+        <p class="card-text">Con tu sola presencia me inspiras a ser la versión de mí
+          que quiero que veas para siempre. Eso no lo hace nadie más.</p>
+      </div>
+      <div class="card tc reveal">
+        <div class="card-num">06</div>
+        <div class="card-title">La oscuridad no gana</div>
+        <p class="card-text">Las tormentas que has cruzado no te definen. Lo que te define
+          es que sigues caminando incluso cuando el camino no se ve.
+          Esa es una luz que no se apaga.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-num">07</div>
+        <div class="card-title">Tu corazón enorme</div>
+        <p class="card-text">Das sin medir, amas sin pedir nada. Eres la persona más
+          genuina que he tenido el honor de conocer.</p>
+      </div>
+      <div class="card tc reveal">
+        <div class="card-num">08</div>
+        <div class="card-title">Ya eres suficiente</div>
+        <p class="card-text">No cuando estés "mejor". Ahora mismo, exactamente como eres,
+          ya eres suficiente para mí. Y para este mundo.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-num">09</div>
+        <div class="card-title">Que eres tú</div>
+        <p class="card-text">Sin más. Sin explicación. Eres tú,
+          y eso ya es razón suficiente para absolutamente todo.</p>
+      </div>
+    </div>
+    <p class="page-num">— 2 —</p>
+  </div>
+
+  <!-- CAPÍTULO II -->
+  <div class="page-section reveal">
+    <div class="chapter-opener">
+      <span class="chapter-num t">Capítulo II</span>
+      <div class="chapter-divider t"><span class="chapter-icon t">✦</span></div>
+      <h2 class="chapter-title">Las tormentas <span class="tl">también pasan</span></h2>
+      <span class="chapter-script" style="color:rgba(124,72,112,0.38)">después de la lluvia, flores</span>
+    </div>
+
+    <div class="pull-quote tq">
+      Hay días en que el mundo se siente demasiado grande
+      y tú demasiado pequeña para él.
+      Recuerda que los árboles más fuertes
+      crecieron entre las tormentas más feroces.
+    </div>
+
+    <div class="body-text">
+      <p>
+        No siempre voy a entender todo lo que sientes por dentro.
+        Pero nunca voy a dejar de intentarlo.
+        <span class="hlt">Puedes ser un caos absoluto
+        y seguirás siendo lo más hermoso que he visto.</span>
+      </p>
+      <p>
+        Los días grises no dicen la verdad sobre quién eres.
+        Solo son días grises. El sol no desaparece
+        porque hoy no lo puedas ver.
+        <span class="hlt">Sigue aquí. El mañana también te pertenece.</span>
+      </p>
+      <p>
+        Y si algún día el peso se siente demasiado,
+        aquí estoy. No para arreglarlo todo,
+        sino para <span class="hlt">cargarlo contigo.</span>
+      </p>
+    </div>
+
+    <div class="poem reveal">
+      Tú no eres tu peor día.<br>
+      No eres lo que la oscuridad te dice cuando duele.<br>
+      <span class="hl">Eres la persona que sobrevivió a todo eso,</span><br>
+      y que sigue siendo capaz de amar.
+    </div>
+    <p class="page-num">— 3 —</p>
+  </div>
+
+  <!-- CAPÍTULO III -->
+  <div class="page-section reveal">
+    <div class="chapter-opener">
+      <span class="chapter-num">Capítulo III</span>
+      <div class="chapter-divider"><span class="chapter-icon">♡</span></div>
+      <h2 class="chapter-title">Lo que <em>nunca cambiará</em></h2>
+      <span class="chapter-script">promesas del alma</span>
+    </div>
+
+    <div class="pull-quote">
+      Elegiría equivocarme mil veces más,
+      si al final del día eres tú quien está a mi lado.
+    </div>
+
+    <div class="body-text">
+      <p>
+        No puedo prometerte que seré siempre perfecto.
+        Pero sí te prometo que cuando falle, volvería.
+        Que cuando me equivoque, lo reconoceré.
+        Que cuando duela, <span class="hl">seré el primero en querer sanar contigo.</span>
+      </p>
+      <p>
+        Y en esos días en que tú misma no creas en ti,
+        <span class="hlt">yo creeré por los dos.</span>
+      </p>
+      <p>
+        Porque amarte no es algo que hago.<br>
+        <span class="hl">Es algo que soy.</span>
+      </p>
+    </div>
+
+    <div class="heart-section reveal">
+      <div class="heart-wrap">
+        <div class="hring"></div><div class="hring"></div><div class="hring"></div>
+        <svg class="heart-svg" viewBox="0 0 100 92" fill="none">
+          <path d="M50 88 C50 88 8 58 8 30 C8 16 18 6 30 6 C38 6 45 10 50 17 C55 10 62 6 70 6 C82 6 92 16 92 30 C92 58 50 88 50 88Z" fill="url(#hg2)"/>
+          <defs>
+            <linearGradient id="hg2" x1="8" y1="6" x2="92" y2="88" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#E8A5B8"/>
+              <stop offset="50%" stop-color="#B03060"/>
+              <stop offset="100%" stop-color="#8B1030"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <p class="heart-phrase">
+        "Este corazón tiene tu nombre grabado,<br>
+        y no hay forma de borrarlo."
+      </p>
+    </div>
+    <p class="page-num">— 4 —</p>
+  </div>
+
+  <!-- EPÍLOGO -->
+  <div class="page-section reveal">
+    <div class="chapter-opener">
+      <span class="chapter-num">Epílogo</span>
+      <div class="chapter-divider"><span class="chapter-icon">✦</span></div>
+      <h2 class="chapter-title">Gracias por <em>existir</em></h2>
+      <span class="chapter-script">mi lugar favorito</span>
+    </div>
+    <div class="body-text">
+      <p>
+        No escribí esto para convencerte de nada.
+        Lo escribí porque cada vez que pienso en ti,
+        algo dentro de mí necesita decírtelo.
+      </p>
+      <p>
+        <span class="hlt">El hecho de que existas hace que este mundo sea mejor.
+        Aunque a veces no lo puedas sentir, es verdad.</span>
+      </p>
+      <p>
+        Eres mi lugar favorito en el mundo.<br>
+        Y siempre lo serás.
+      </p>
+    </div>
+
+    <div class="signature-block">
+      <p class="stars">★ &nbsp; ★ &nbsp; ★ &nbsp; ★ &nbsp; ★</p>
+      <p class="sig-firma">Con todo mi amor</p>
+      <p class="sig-sub">siempre tuyo &nbsp;·&nbsp; para siempre</p>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem;font-family:'Raleway',sans-serif;font-size:.5rem;letter-spacing:.32em;text-transform:uppercase;color:rgba(139,16,48,0.18);">
+      Hecho con el corazón &nbsp;·&nbsp; solo para ti &nbsp;·&nbsp; ♡
+    </div>
+    <p class="page-num">— fin —</p>
+  </div>
+
+</main><!-- /book-main -->
+
+
+<!-- ════ PLAYER ════ -->
+<div id="music-player">
+  <div class="player-disc">♪</div>
+  <div class="player-info">
+    <span class="player-title">Una canción para ti</span>
+    <span class="player-sub">Escogida con amor</span>
+  </div>
+  <div class="player-controls">
+    <button id="play-btn" aria-label="Play/Pause">
+      <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="icon-pause" viewBox="0 0 24 24" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+  </div>
+  <div class="player-progress">
+    <div class="progress-track" id="progress-track">
+      <div id="progress-fill"></div>
+    </div>
+    <span id="time-disp">0:00</span>
+  </div>
+  <div class="wave-bars">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+</div>
+
+
+<script>
+/* ── ESTRELLAS PARPADEANTES (portada) ── */
+(function(){
+  const cv = document.getElementById('stars-bg');
+  const ctx = cv.getContext('2d');
+  let W, H, stars = [];
+
+  function resize(){ W = cv.width = cv.parentElement.clientWidth; H = cv.height = cv.parentElement.clientHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function mkStar(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: .4 + Math.random() * 1.2,
+      alpha: Math.random(),
+      speed: .005 + Math.random() * .015,
+      phase: Math.random() * Math.PI * 2,
+      gold: Math.random() < .15,
+    };
+  }
+  for(let i = 0; i < 120; i++) stars.push(mkStar());
+
+  (function loop(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.phase += s.speed;
+      const a = .2 + .8 * Math.abs(Math.sin(s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = s.gold
+        ? `rgba(212,175,106,${a*0.8})`
+        : `rgba(255,240,250,${a*0.7})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ── PÉTALOS + CORAZONES (cae siempre) ── */
+(function(){
+  const cv = document.getElementById('petals-canvas');
+  const ctx = cv.getContext('2d');
+  let W, H, particles = [];
+
+  function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  const COLS = [
+    'rgba(192,57,43,A)', 'rgba(176,48,96,A)', 'rgba(232,165,184,A)',
+    'rgba(212,175,106,A)', 'rgba(200,140,180,A)', 'rgba(255,185,210,A)'
+  ];
+
+  function mkPetal(){
+    return { type:'petal',
+      x:Math.random()*W, y:-20-Math.random()*100,
+      size:5+Math.random()*10,
+      alpha:.06+Math.random()*.22,
+      speed:.45+Math.random()*1.1,
+      drift:(Math.random()-.5)*.6,
+      rot:Math.random()*Math.PI*2,
+      rotS:(Math.random()-.5)*.05,
+      color:COLS[Math.floor(Math.random()*COLS.length)],
+      wob:Math.random()*100, wobS:.015+Math.random()*.02,
+      scaleX:.28+Math.random()*.3,
+    };
+  }
+
+  function mkHeart(){
+    return { type:'heart',
+      x:Math.random()*W, y:-20-Math.random()*80,
+      size:4+Math.random()*7,
+      alpha:.04+Math.random()*.12,
+      speed:.3+Math.random()*.75,
+      drift:(Math.random()-.5)*.35,
+      rot:0, rotS:(Math.random()-.5)*.02,
+      wob:Math.random()*100, wobS:.01+Math.random()*.015,
+    };
+  }
+
+  for(let i=0;i<58;i++){ const p=mkPetal(); p.y=Math.random()*H; particles.push(p); }
+  for(let i=0;i<14;i++){ const p=mkHeart(); p.y=Math.random()*H; particles.push(p); }
+
+  function drawHeart(ctx, x, y, s){
+    ctx.save(); ctx.translate(x,y);
+    ctx.beginPath();
+    ctx.moveTo(0,-s*.25);
+    ctx.bezierCurveTo(s*.5,-s*.78,s,s*.08,0,s*.75);
+    ctx.bezierCurveTo(-s,s*.08,-s*.5,-s*.78,0,-s*.25);
+    ctx.closePath(); ctx.restore();
+  }
+
+  (function loop(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach((p,i)=>{
+      p.y+=p.speed; p.x+=p.drift+Math.sin(p.wob)*.5;
+      p.wob+=p.wobS; p.rot+=p.rotS;
+      if(p.y>H+30) particles[i]=p.type==='heart'?mkHeart():mkPetal();
+      if(p.type==='petal'){
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+        ctx.fillStyle=p.color.replace('A',p.alpha);
+        ctx.beginPath();
+        ctx.ellipse(0,0,p.size*p.scaleX,p.size,0,0,Math.PI*2);
+        ctx.fill(); ctx.restore();
+      } else {
+        ctx.fillStyle=`rgba(232,165,184,${p.alpha})`;
+        ctx.save(); ctx.rotate(p.rot);
+        drawHeart(ctx,p.x,p.y,p.size);
+        ctx.fill(); ctx.restore();
+      }
+    });
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ── LUCIÉRNAGAS (interior) ── */
+(function(){
+  const cv = document.getElementById('firefly-canvas');
+  const ctx = cv.getContext('2d');
+  let W, H, flies = [];
+
+  function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  function mkFly(){
+    return {
+      x:Math.random()*W, y:Math.random()*H,
+      r:1.4+Math.random()*2.2,
+      maxAlpha:.25+Math.random()*.5,
+      vx:(Math.random()-.5)*.38,
+      vy:(Math.random()-.5)*.38,
+      phase:Math.random()*Math.PI*2,
+      speed:.007+Math.random()*.014,
+      gold:Math.random()<.55,
+    };
+  }
+  for(let i=0;i<28;i++) flies.push(mkFly());
+
+  (function loop(){
+    ctx.clearRect(0,0,W,H);
+    flies.forEach(f=>{
+      f.phase+=f.speed;
+      const a=f.maxAlpha*(.5+.5*Math.sin(f.phase));
+      f.x+=f.vx; f.y+=f.vy;
+      if(f.x<0||f.x>W) f.vx*=-1;
+      if(f.y<0||f.y>H) f.vy*=-1;
+      const col=f.gold?`rgba(212,175,106,`:`rgba(232,165,184,`;
+      const grd=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r*5);
+      grd.addColorStop(0,col+a+')');
+      grd.addColorStop(1,col+'0)');
+      ctx.beginPath(); ctx.arc(f.x,f.y,f.r*5,0,Math.PI*2);
+      ctx.fillStyle=grd; ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      ctx.fillStyle=col+Math.min(a*2,1)+')'; ctx.fill();
+    });
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ── ABRIR LIBRO ── */
+const coverCard   = document.getElementById('cover-card');
+const coverWrap   = document.getElementById('cover-wrap');
+const bookMain    = document.getElementById('book-main');
+const continueBtn = document.getElementById('continue-btn');
+const music       = document.getElementById('bg-music');
+const player      = document.getElementById('music-player');
+const playBtn     = document.getElementById('play-btn');
+const iconPlay    = document.getElementById('icon-play');
+const iconPause   = document.getElementById('icon-pause');
+const progressFill  = document.getElementById('progress-fill');
+const timeDisp      = document.getElementById('time-disp');
+const progressTrack = document.getElementById('progress-track');
+
+let bookOpened = false;
+
+coverCard.addEventListener('click', openBook);
+coverCard.addEventListener('touchend', e=>{ e.preventDefault(); openBook(); }, {passive:false});
+
+function openBook(){
+  if(bookOpened) return;
+  bookOpened = true;
+  coverCard.classList.add('flip');
+  setTimeout(()=>{
+    music.volume = 0;
+    music.play().then(()=>fadeInAudio()).catch(()=>{});
+    player.classList.add('show');
+  }, 1200);
+  setTimeout(()=>continueBtn.classList.add('show'), 2100);
+}
+
+function handleContinue(){
+  coverWrap.classList.add('dissolve');
+  bookMain.style.display = 'block';
+  document.body.classList.add('opened');
+  window.scrollTo(0,0);
+  setTimeout(()=>{ coverWrap.style.display='none'; initReveal(); }, 1000);
+}
+
+continueBtn.addEventListener('click', handleContinue);
+continueBtn.addEventListener('touchend', e=>{ e.preventDefault(); e.stopPropagation(); handleContinue(); }, {passive:false});
+
+function fadeInAudio(){
+  const target=.7, step=.02;
+  const iv=setInterval(()=>{
+    if(music.volume<target-step) music.volume=Math.min(music.volume+step,target);
+    else { music.volume=target; clearInterval(iv); }
+  }, 60);
+}
+
+function setPlayState(p){
+  if(p){ iconPlay.style.display='none'; iconPause.style.display=''; player.classList.add('playing'); playBtn.classList.remove('paused'); }
+  else { iconPlay.style.display=''; iconPause.style.display='none'; player.classList.remove('playing'); playBtn.classList.add('paused'); }
+}
+
+playBtn.addEventListener('click',()=>{
+  if(music.paused){ music.play(); setPlayState(true); }
+  else { music.pause(); setPlayState(false); }
+});
+music.addEventListener('play', ()=>setPlayState(true));
+music.addEventListener('pause',()=>setPlayState(false));
+
+function fmt(s){ const m=Math.floor(s/60); return m+':'+(Math.floor(s%60)+'').padStart(2,'0'); }
+music.addEventListener('timeupdate',()=>{
+  if(!music.duration) return;
+  progressFill.style.width=(music.currentTime/music.duration*100)+'%';
+  timeDisp.textContent=fmt(music.currentTime)+' / '+fmt(music.duration);
+});
+progressTrack.addEventListener('click',e=>{
+  const r=progressTrack.getBoundingClientRect();
+  music.currentTime=(e.clientX-r.left)/r.width*music.duration;
+});
+
+/* ── REVEAL EN SCROLL ── */
+function initReveal(){
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      e.target.classList.add('visible');
+      e.target.querySelectorAll('.card').forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*90));
+      obs.unobserve(e.target);
+    });
+  },{ threshold:.06, rootMargin:'0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el=>{ if(!el.classList.contains('card')) obs.observe(el); });
+
+  const cardObs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(!e.isIntersecting) return; e.target.classList.add('visible'); cardObs.unobserve(e.target); });
+  },{ threshold:.05, rootMargin:'0px 0px -20px 0px' });
+  document.querySelectorAll('.card.reveal').forEach(el=>cardObs.observe(el));
+}
+</script>
+</body>
+</html>
